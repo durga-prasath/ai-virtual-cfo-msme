@@ -54,7 +54,7 @@ class Vendor(Base):
     # Relationships
     user = relationship("User", back_populates="vendors")
     purchase_invoices = relationship("PurchaseInvoice", back_populates="vendor")
-    payments = relationship("Payment", back_populates="payments")
+    payments = relationship("Payment", back_populates="vendor")
     
     def __repr__(self):
         return f"<Vendor {self.name}>"

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # PostgreSQL Connection
     DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:1974@localhost:5432/virtual_cfo_db"
+    "postgresql://postgres:1974@localhost:5432/ai_cfo_db"
 )
     
     # Security (for later when you add JWT auth)
