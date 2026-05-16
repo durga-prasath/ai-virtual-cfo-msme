@@ -36,7 +36,7 @@ app = FastAPI(
 )
 
 # Include your existing routers
-app.include_router(billing_router, prefix="/api/v1/billing", tags=["Billing"])
+app.include_router(billing_router, prefix="/api/v1")
 
 
 @app.get("/health")

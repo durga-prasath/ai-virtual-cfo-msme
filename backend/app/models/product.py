@@ -34,4 +34,4 @@ class Product(Base):
     
     # Relationships
     user = relationship("User", back_populates="products")
-    invoice_items = relationship("InvoiceItem", back_populates="product")
+    invoice_items = relationship("SalesInvoiceItem", back_populates="product")
