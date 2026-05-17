@@ -19,7 +19,7 @@ class GSTTypeEnum(str, Enum):
 # ─────────────────────────────────────────────
 
 class CustomerCreateSchema(BaseModel):
-    user_id: UUID
+    user_id: Optional[UUID] = None
     name: str = Field(..., min_length=1, max_length=200)
     email: Optional[str] = Field(None, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
@@ -62,7 +62,7 @@ class CustomerResponseSchema(BaseModel):
 # ─────────────────────────────────────────────
 
 class ProductCreateSchema(BaseModel):
-    user_id: UUID
+    user_id: Optional[UUID] = None
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
     hsn_code: Optional[str] = Field(None, max_length=8)
@@ -130,7 +130,7 @@ class InvoiceItemResponseSchema(BaseModel):
 
 
 class InvoiceCreateSchema(BaseModel):
-    user_id: UUID
+    user_id: Optional[UUID] = None
     customer_id: UUID
     gst_type: GSTTypeEnum
     due_date: Optional[date] = None

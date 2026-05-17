@@ -17,7 +17,7 @@ from app.db.init_db import init_db
 # Import routers (keep your existing ones)
 from app.api.billing.routes import router as billing_router
 
-
+from app.api.auth.routes import router as auth_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -30,13 +30,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="AI Virtual CFO - MSME Platform",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
     description="ERP-integrated fintech backend with GST, OCR & forecasting"
 )
 
 # Include your existing routers
 app.include_router(billing_router, prefix="/api/v1")
+
+# Public routes — no token needed
+app.include_router(auth_router, prefix="/api/v1")
 
 
 @app.get("/health")
