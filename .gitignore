@@ -1,25 +1,27 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
 
-# Virtual Environment
+# Virtual environments
 venv/
+.venv/
 env/
 
-# Environment variables
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
 
-# Logs
+# Node.js
+node_modules/
+frontend/dist/
+
+# Uploads and temporary files
+uploads/
+**/uploads/
 *.log
 
 # OS files
 .DS_Store
 Thumbs.db
-
-# Node (for frontend later)
-node_modules/
-
-# Uploads / temp files
-uploads/

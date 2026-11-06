@@ -1,6 +1,6 @@
 # backend/app/schemas/billing_schema.py
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, field_serializer, ConfigDict
 from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID
@@ -10,8 +10,8 @@ import re
 
 
 class GSTTypeEnum(str, Enum):
-    INTRA = "INTRA"   # Same state → CGST + SGST
-    INTER = "INTER"   # Different state → IGST
+    INTRA = "INTRA"
+    INTER = "INTER"
 
 
 # ─────────────────────────────────────────────
@@ -23,11 +23,18 @@ class CustomerCreateSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     email: Optional[str] = Field(None, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
-    gstin: Optional[str] = Field(None, min_length=15, max_length=15)
+    gstin: Optional[str] = Field(None, max_length=15)
     address: Optional[str] = None
     city: Optional[str] = Field(None, max_length=100)
     state: Optional[str] = Field(None, max_length=100)
     pincode: Optional[str] = Field(None, max_length=10)
+
+    @field_validator('email', 'phone', 'gstin', 'address', 'city', 'state', 'pincode', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
     @field_validator('gstin')
     @classmethod
@@ -38,6 +45,7 @@ class CustomerCreateSchema(BaseModel):
             if not re.match(pattern, v):
                 raise ValueError("Invalid GSTIN format. Example: 33AAPFU0939F1ZV")
         return v
+
 
 
 class CustomerResponseSchema(BaseModel):
@@ -98,6 +106,10 @@ class ProductResponseSchema(BaseModel):
     is_active: bool
     created_at: datetime
 
+    @field_serializer('base_price', 'gst_rate')
+    def serialize_decimal(self, v: Decimal) -> str:
+        return f"{v:.2f}"
+
 
 # ─────────────────────────────────────────────
 # INVOICE SCHEMAS
@@ -128,6 +140,11 @@ class InvoiceItemResponseSchema(BaseModel):
     igst_amount: Decimal
     total: Decimal
 
+    @field_serializer('quantity', 'unit_price', 'gst_rate',
+                      'cgst_amount', 'sgst_amount', 'igst_amount', 'total')
+    def serialize_decimal(self, v: Decimal) -> str:
+        return f"{v:.2f}"
+
 
 class InvoiceCreateSchema(BaseModel):
     user_id: Optional[UUID] = None
@@ -151,9 +168,42 @@ class InvoiceResponseSchema(BaseModel):
     subtotal: Decimal
     tax_amount: Decimal
     total_amount: Decimal
+    amount_paid: Decimal
+    amount_due: Decimal
     cgst_total: Decimal
     sgst_total: Decimal
     igst_total: Decimal
     notes: Optional[str]
     created_at: datetime
     items: List[InvoiceItemResponseSchema]
+
+    @field_serializer('subtotal', 'tax_amount', 'total_amount',
+                      'amount_paid', 'amount_due', 'cgst_total',
+                      'sgst_total', 'igst_total')
+    def serialize_decimal(self, v: Decimal) -> str:
+        return f"{v:.2f}"
+
+
+class InvoiceListResponseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    user_id: UUID
+    customer_id: UUID
+    invoice_number: str
+    invoice_date: datetime
+    due_date: Optional[datetime]
+    status: str
+    subtotal: Decimal
+    total_amount: Decimal
+    amount_paid: Decimal
+    amount_due: Decimal
+    cgst_total: Decimal
+    sgst_total: Decimal
+    igst_total: Decimal
+    created_at: datetime
+
+    @field_serializer('subtotal', 'total_amount', 'amount_paid',
+                      'amount_due', 'cgst_total', 'sgst_total', 'igst_total')
+    def serialize_decimal(self, v: Decimal) -> str:
+        return f"{v:.2f}"

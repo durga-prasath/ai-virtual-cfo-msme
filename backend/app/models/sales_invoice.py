@@ -11,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     Boolean,        # ← FIXED: Was missing. Needed for synced_to_erp
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -37,13 +38,16 @@ class PaymentMethod(str, enum.Enum):
 
 class SalesInvoice(Base):
     __tablename__ = "sales_invoices"
+    __table_args__ = (
+        UniqueConstraint("user_id", "invoice_number", name="uq_user_invoice_number"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
 
-    # Invoice numbering (business-specific series)
-    invoice_number = Column(String(50), nullable=False, unique=True)
+    # Invoice numbering (business-specific series, sequential per user per year)
+    invoice_number = Column(String(50), nullable=False)
     invoice_date = Column(DateTime, default=datetime.utcnow)
     due_date = Column(DateTime, nullable=True)
 

@@ -1,5 +1,6 @@
 # backend/app/api/billing/routes.py
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -11,14 +12,19 @@ from app.schemas.billing_schema import (
     CustomerCreateSchema, CustomerResponseSchema,
     ProductCreateSchema, ProductResponseSchema,
     InvoiceCreateSchema, InvoiceResponseSchema,
+    InvoiceListResponseSchema,
 )
 from app.services.billing_service import (
     create_customer, get_customer, list_customers,
     create_product, list_products,
     create_invoice, get_invoice,
 )
+from app.services.payment_service import (
+    list_invoices, send_invoice, cancel_invoice,
+)
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
+
 
 
 # ── Customers ──────────────────────────────────
@@ -107,6 +113,21 @@ def create_invoice_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/invoices", response_model=list[InvoiceListResponseSchema])
+def list_invoices_endpoint(
+    status: Optional[str] = Query(
+        default=None,
+        description="Filter by status: draft | sent | paid | overdue | cancelled"
+    ),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all sales invoices for the current user with optional status filter."""
+    return list_invoices(db, current_user.id, status, skip, limit)
+
+
 @router.get("/invoices/{invoice_id}", response_model=InvoiceResponseSchema)
 def get_invoice_endpoint(
     invoice_id: UUID,
@@ -117,3 +138,23 @@ def get_invoice_endpoint(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return invoice
+
+
+@router.patch("/invoices/{invoice_id}/send", response_model=InvoiceListResponseSchema)
+def send_invoice_endpoint(
+    invoice_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Transitions invoice: DRAFT → SENT."""
+    return send_invoice(db, invoice_id, current_user.id)
+
+
+@router.patch("/invoices/{invoice_id}/cancel", response_model=InvoiceListResponseSchema)
+def cancel_invoice_endpoint(
+    invoice_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Cancels an invoice."""
+    return cancel_invoice(db, invoice_id, current_user.id)

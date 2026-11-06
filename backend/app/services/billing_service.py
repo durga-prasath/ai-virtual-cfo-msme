@@ -235,6 +235,13 @@ def create_invoice(db: Session, data: InvoiceCreateSchema) -> SalesInvoice:
     db.add(invoice)
     db.flush()  # Gets invoice.id without committing
 
+    # ── Auto-post to Revenue Ledger ──
+    try:
+        from app.services.erp_sync_service import post_invoice_to_ledger
+        post_invoice_to_ledger(db, invoice)
+    except Exception as ledger_err:
+        logger.warning(f"Ledger auto-post failed (non-fatal): {ledger_err}")
+
     # Create line items
     for item_data in items_data:
         line_item = SalesInvoiceItem(
